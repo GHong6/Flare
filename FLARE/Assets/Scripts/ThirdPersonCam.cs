@@ -60,7 +60,7 @@ public class ThirdPersonCam : MonoBehaviour
 
     private void Update()
     {
-
+        Debug.Log(currentStyle);
         // switch styles
         if (Input.GetKeyDown(KeyCode.Alpha1))
         {
@@ -80,11 +80,14 @@ public class ThirdPersonCam : MonoBehaviour
 
         if (Input.GetMouseButtonDown(1))
         {
+
             StartAim();
+            SwitchCameraStyle(CameraStyle.Aim);
         }
         else if (Input.GetMouseButtonUp(1))
         {
             CancelAim();
+            SwitchCameraStyle(CameraStyle.Combat);
         }
 
         /*// Check if right mouse button is held down and current style is combat
@@ -114,18 +117,49 @@ public class ThirdPersonCam : MonoBehaviour
             }
         }
 
-        else if(currentStyle == CameraStyle.Combat || currentStyle == CameraStyle.Aim)
+        else if(currentStyle == CameraStyle.Combat)
         {
 
-            Quaternion targetRotation = Quaternion.Euler(0, cameraTransform.eulerAngles.y, 0);
-            playerObj.rotation = Quaternion.Lerp(playerObj.rotation, targetRotation, rotationSpeed * Time.deltaTime);
-            /*Vector3 dirtoCombatLookAt = combatLookAt.position - new Vector3(transform.position.x, combatLookAt.position.y, transform.position.z);
-            orientation.forward = dirtoCombatLookAt.normalized;
 
-            playerObj.forward = dirtoCombatLookAt.normalized;*/
+            // Get the rotation of the combatVirtualCamera
+            Quaternion targetRotation = Quaternion.Euler(0f, combatVirtualCamera.transform.eulerAngles.y, 0f);
+
+            //Quaternion targetRotation = Quaternion.Euler(0f, orientation.eulerAngles.y + 20f, 0f);
+
+            // Interpolate towards the target rotation for the player
+            playerObj.rotation = Quaternion.Lerp(playerObj.rotation, targetRotation, rotationSpeed * Time.deltaTime);
+
+            // Set orientation rotation to match player's rotation
+            orientation.rotation = playerObj.rotation;
+
+            // Update orientation position to follow the player
+            orientation.position = player.position;
+
+
         }
 
-     
+        else if ( currentStyle == CameraStyle.Aim)
+        {
+
+
+            // Get the rotation of the combatVirtualCamera
+            Quaternion targetRotation = Quaternion.Euler(0f, aimVirtualCamera.transform.eulerAngles.y, 0f);
+
+            //Quaternion targetRotation = Quaternion.Euler(0f, orientation.eulerAngles.y + 20f, 0f);
+
+            // Interpolate towards the target rotation for the player
+            playerObj.rotation = Quaternion.Lerp(playerObj.rotation, targetRotation, rotationSpeed * Time.deltaTime);
+
+            // Set orientation rotation to match player's rotation
+            orientation.rotation = playerObj.rotation;
+
+            // Update orientation position to follow the player
+            orientation.position = player.position;
+
+
+        }
+
+
     }
 
     private void SwitchCameraStyle(CameraStyle newStyle)
@@ -156,7 +190,9 @@ public class ThirdPersonCam : MonoBehaviour
         aimVirtualCamera.Priority += priorityBoostAmount;
         aimCanvas.enabled = true;
         thirdPersonCanvas.enabled = false;
+        combatCam.SetActive(false);
         aimCam.SetActive(true);
+        
     }
 
     private void CancelAim()
@@ -165,6 +201,7 @@ public class ThirdPersonCam : MonoBehaviour
         aimCanvas.enabled = false;
         thirdPersonCanvas.enabled = true;
         aimCam.SetActive(false);
+
     }
 
 
