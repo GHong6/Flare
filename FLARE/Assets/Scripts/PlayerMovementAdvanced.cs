@@ -43,9 +43,20 @@ public class PlayerMovementAdvanced : MonoBehaviour
     public float maxSlopeAngle;
     private RaycastHit slopeHit;
     private bool exitingSlope;
-    
 
+    [Header("Aim & Shoot")]
     public Transform orientation;
+    public Transform cameraTransform;
+
+    [SerializeField]
+    private GameObject bulletPrefab;
+    [SerializeField]
+    private Transform barrelTransform;
+    [SerializeField]
+    private Transform bulletParent;
+    [SerializeField]
+    private float bulletRange = 50f;
+
 
     float horizontalInput;
     float verticalInput;
@@ -75,6 +86,29 @@ public class PlayerMovementAdvanced : MonoBehaviour
 
         startYScale = transform.localScale.y;
     }
+
+
+
+    private void ShootGun()
+    {
+        RaycastHit hit;
+        GameObject bullet = GameObject.Instantiate(bulletPrefab, barrelTransform.position, Quaternion.identity, bulletParent);
+        BulletController bulletController = bullet.GetComponent<BulletController>();
+        if (Physics.Raycast(cameraTransform.position, cameraTransform.forward, out hit, Mathf.Infinity))
+        {
+            
+            bulletController.target = hit.point;
+            bulletController.hit = true;
+        }
+        else
+        {
+   
+            bulletController.target = cameraTransform.position + cameraTransform.forward * bulletRange;
+            bulletController.hit = false;
+        }
+
+    }
+
 
     private void Update()
     {
@@ -123,6 +157,13 @@ public class PlayerMovementAdvanced : MonoBehaviour
         if (Input.GetKeyUp(crouchKey))
         {
             transform.localScale = new Vector3(transform.localScale.x, startYScale, transform.localScale.z);
+        }
+
+
+        //SHOOT
+        if (Input.GetMouseButtonDown(0))
+        {
+            ShootGun();
         }
     }
 
