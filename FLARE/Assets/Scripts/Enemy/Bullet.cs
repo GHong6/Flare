@@ -10,7 +10,7 @@ public class Bullet : MonoBehaviour
         if( hitTransform.CompareTag("Player"))
         {
             Debug.Log("Hit Player");
-            hitTransform.GetComponent<PlayerHealth>().TakeDamage(40);
+            hitTransform.GetComponent<PlayerHealth>().TakeDamage(1);
 
         }
         Destroy(gameObject);

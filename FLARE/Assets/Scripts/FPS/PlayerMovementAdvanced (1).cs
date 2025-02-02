@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using TMPro;
 
 public class PlayerMovementAdvanced1 : MonoBehaviour
 {
@@ -37,7 +36,13 @@ public class PlayerMovementAdvanced1 : MonoBehaviour
     public float maxSlopeAngle;
     private RaycastHit slopeHit;
     private bool exitingSlope;
-    
+
+    //[Header("Stamina System")]
+    //public float maxStamina = 10f;
+    private float stamina;
+    //public float staminaDrainRate = 1f;
+    //public float staminaRegenRate = 0.5f;
+    //private bool isRegeneratingStamina = false;
 
     public Transform orientation;
 
@@ -57,30 +62,31 @@ public class PlayerMovementAdvanced1 : MonoBehaviour
         air
     }
 
+    private PlayerHealth playerHealth;
+
     private void Start()
     {
+        playerHealth = Object.FindFirstObjectByType<PlayerHealth>();
         rb = GetComponent<Rigidbody>();
         rb.freezeRotation = true;
 
         readyToJump = true;
+        stamina = playerHealth.maxStamina;
 
         startYScale = transform.localScale.y;
+
+        
     }
 
     private void Update()
     {
-        // ground check
         grounded = Physics.Raycast(transform.position, Vector3.down, playerHeight * 0.5f + 0.2f, whatIsGround);
 
         MyInput();
         SpeedControl();
         StateHandler();
 
-        // handle drag
-        if (grounded)
-            rb.drag = groundDrag;
-        else
-            rb.drag = 0;
+        rb.drag = grounded ? groundDrag : 0;
     }
 
     private void FixedUpdate()
@@ -93,24 +99,19 @@ public class PlayerMovementAdvanced1 : MonoBehaviour
         horizontalInput = Input.GetAxisRaw("Horizontal");
         verticalInput = Input.GetAxisRaw("Vertical");
 
-        // when to jump
-        if(Input.GetKey(jumpKey) && readyToJump && grounded)
+        if (Input.GetKey(jumpKey) && readyToJump && grounded)
         {
             readyToJump = false;
-
             Jump();
-
             Invoke(nameof(ResetJump), jumpCooldown);
         }
 
-        // start crouch
         if (Input.GetKeyDown(crouchKey))
         {
             transform.localScale = new Vector3(transform.localScale.x, crouchYScale, transform.localScale.z);
             rb.AddForce(Vector3.down * 5f, ForceMode.Impulse);
         }
 
-        // stop crouch
         if (Input.GetKeyUp(crouchKey))
         {
             transform.localScale = new Vector3(transform.localScale.x, startYScale, transform.localScale.z);
@@ -119,28 +120,23 @@ public class PlayerMovementAdvanced1 : MonoBehaviour
 
     private void StateHandler()
     {
-        // Mode - Crouching
         if (Input.GetKey(crouchKey))
         {
             state = MovementState.crouching;
             moveSpeed = crouchSpeed;
         }
-
-        // Mode - Sprinting
-        else if(grounded && Input.GetKey(sprintKey))
+        else if (grounded && Input.GetKey(sprintKey) && playerHealth != null && playerHealth.CanUseStamina())
         {
             state = MovementState.sprinting;
             moveSpeed = sprintSpeed;
+            playerHealth.ConsumeStamina();
         }
-
-        // Mode - Walking
         else if (grounded)
         {
             state = MovementState.walking;
             moveSpeed = walkSpeed;
+            playerHealth.StartStaminaRegen();
         }
-
-        // Mode - Air
         else
         {
             state = MovementState.air;
@@ -149,45 +145,31 @@ public class PlayerMovementAdvanced1 : MonoBehaviour
 
     private void MovePlayer()
     {
-        // calculate movement direction
         moveDirection = orientation.forward * verticalInput + orientation.right * horizontalInput;
 
-        // on slope
         if (OnSlope() && !exitingSlope)
         {
             rb.AddForce(GetSlopeMoveDirection() * moveSpeed * 20f, ForceMode.Force);
-
-            if (rb.velocity.y > 0)
-                rb.AddForce(Vector3.down * 80f, ForceMode.Force);
+            if (rb.velocity.y > 0) rb.AddForce(Vector3.down * 80f, ForceMode.Force);
         }
-
-        // on ground
-        else if(grounded)
+        else if (grounded)
             rb.AddForce(moveDirection.normalized * moveSpeed * 10f, ForceMode.Force);
-
-        // in air
-        else if(!grounded)
+        else
             rb.AddForce(moveDirection.normalized * moveSpeed * 10f * airMultiplier, ForceMode.Force);
 
-        // turn gravity off while on slope
         rb.useGravity = !OnSlope();
     }
 
     private void SpeedControl()
     {
-        // limiting speed on slope
         if (OnSlope() && !exitingSlope)
         {
             if (rb.velocity.magnitude > moveSpeed)
                 rb.velocity = rb.velocity.normalized * moveSpeed;
         }
-
-        // limiting speed on ground or in air
         else
         {
             Vector3 flatVel = new Vector3(rb.velocity.x, 0f, rb.velocity.z);
-
-            // limit velocity if needed
             if (flatVel.magnitude > moveSpeed)
             {
                 Vector3 limitedVel = flatVel.normalized * moveSpeed;
@@ -199,32 +181,43 @@ public class PlayerMovementAdvanced1 : MonoBehaviour
     private void Jump()
     {
         exitingSlope = true;
-
-        // reset y velocity
         rb.velocity = new Vector3(rb.velocity.x, 0f, rb.velocity.z);
-
         rb.AddForce(transform.up * jumpForce, ForceMode.Impulse);
     }
+
     private void ResetJump()
     {
         readyToJump = true;
-
         exitingSlope = false;
     }
 
     private bool OnSlope()
     {
-        if(Physics.Raycast(transform.position, Vector3.down, out slopeHit, playerHeight * 0.5f + 0.3f))
+        if (Physics.Raycast(transform.position, Vector3.down, out slopeHit, playerHeight * 0.5f + 0.3f))
         {
             float angle = Vector3.Angle(Vector3.up, slopeHit.normal);
             return angle < maxSlopeAngle && angle != 0;
         }
-
         return false;
     }
 
     private Vector3 GetSlopeMoveDirection()
     {
         return Vector3.ProjectOnPlane(moveDirection, slopeHit.normal).normalized;
+    }
+
+    private void ConsumeStamina()
+    {
+        if (!playerHealth.isRegeneratingStamina)
+        {
+            stamina -= playerHealth.staminaDrainRate * Time.deltaTime;
+            stamina = Mathf.Clamp(stamina, 0, playerHealth.maxStamina);
+            Debug.Log($"Stamina Draining: {stamina}");
+
+            if (playerHealth != null)
+            {
+                playerHealth.SetStamina(stamina);
+            }
+        }
     }
 }

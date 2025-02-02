@@ -71,24 +71,32 @@ public class Gun : MonoBehaviour
             }
         }
     }
+
+
     private IEnumerator Reload()
     {
         gunData.reloading = true;
 
+        // Trigger the reload animations
         TriggerReloadAnimations();
-        yield return new WaitForSeconds(gunData.reloadTime);
 
+        // Get the length of the current reload animation
+        string reloadAnimationName = $"Reload{7 - Mathf.Clamp(gunData.currentAmmo + 1, 1, 6)}";
+        float animationLength = GetAnimationClipLength(armsAnimator, reloadAnimationName);
+        Debug.Log(reloadAnimationName);
+
+        // Wait for the animation to finish
+        yield return new WaitForSeconds(animationLength);
+
+        // Calculate how many bullets need to be reloaded
         int bulletsNeeded = gunData.magSize - gunData.currentAmmo;
         int bulletsAvailable = CountBulletsInInventory();
-        
 
         int bulletsToReload = Mathf.Min(bulletsNeeded, bulletsAvailable);
 
         if (bulletsToReload > 0)
         {
-            
             RemoveBulletsFromInventory(bulletsToReload);
-            gunData.ammoInventory -= bulletsToReload;
             gunData.currentAmmo += bulletsToReload;
         }
         else
@@ -97,7 +105,7 @@ public class Gun : MonoBehaviour
         }
 
         gunData.reloading = false;
-        
+
         UpdateAmmoUI();
         UpdateAmmoInventoryUI();
     }
@@ -134,9 +142,44 @@ public class Gun : MonoBehaviour
 
     private void TriggerReloadAnimations()
     {
-        armsAnimator.Play("Reload", 0, 0f); // Play the reload animation on the arms
-        gunAnimator.Play("Reload", 0, 0f); // Play the reload animation on the gun
+        switch (gunData.currentAmmo)
+        {
+            case 0:
+                armsAnimator.Play("Reload6", 0, 0f); // Play the reload animation on the arms
+                gunAnimator.Play("Reload6", 0, 0f); // Play the reload animation on the gun
+                break;
+
+            case 1:
+                armsAnimator.Play("Reload5", 0, 0f);
+                gunAnimator.Play("Reload5", 0, 0f);
+                break;
+
+            case 2:
+                armsAnimator.Play("Reload4", 0, 0f);
+                gunAnimator.Play("Reload44", 0, 0f);
+                break;
+
+            case 3:
+                armsAnimator.Play("Reload3", 0, 0f);
+                gunAnimator.Play("Reload3", 0, 0f);
+                break;
+
+            case 4:
+                armsAnimator.Play("Reload2", 0, 0f);
+                gunAnimator.Play("Reload2", 0, 0f);
+                break;
+
+            case 5:
+                armsAnimator.Play("Reload1", 0, 0f);
+                gunAnimator.Play("Reload1", 0, 0f);
+                break;
+
+            default:
+                Debug.LogWarning("No matching reload animation for current ammo count: " + gunData.currentAmmo);
+                break;
+        }
     }
+
 
     private void TriggerShootAnimations()
     {
@@ -188,4 +231,22 @@ public class Gun : MonoBehaviour
         }
     }
     public bool IsReloading => gunData.reloading;
+
+    private float GetAnimationClipLength(Animator animator, string clipName)
+    {
+        // Access the RuntimeAnimatorController
+        RuntimeAnimatorController controller = animator.runtimeAnimatorController;
+
+        // Search for the clip with the matching name
+        foreach (AnimationClip clip in controller.animationClips)
+        {
+            if (clip.name == clipName)
+            {
+                return clip.length;
+            }
+        }
+
+        Debug.LogWarning($"Animation clip '{clipName}' not found!");
+        return 0f; // Fallback in case the animation clip isn't found
+    }
 }

@@ -20,6 +20,12 @@ public class GunData : ScriptableObject
 
     [Tooltip("In RPM")] public float fireRate;
     public float reloadTime;
+    public float reloadTime1;
+    public float reloadTime2;
+    public float reloadTime3;
+    public float reloadTime4;
+    public float reloadTime5;
+
     [HideInInspector] public bool reloading;
 
 }
