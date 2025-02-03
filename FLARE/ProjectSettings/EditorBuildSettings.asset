@@ -6,7 +6,13 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Scenes/SampleScene.unity
+    path: Assets/Scenes/3rd person.unity
     guid: 9fc0d4010bbf28b4594072e72b8655ab
+  - enabled: 1
+    path: Assets/Scenes/MenuScreen.unity
+    guid: 043fd6f501b5ac948b785245b9f9833f
+  - enabled: 1
+    path: Assets/Scenes/FPSLevel1.unity
+    guid: da0f7507f1593f9419c6d6821b4897c1
   m_configObjects: {}
   m_UseUCBPForAssetBundles: 0
