@@ -13,12 +13,22 @@ public class PlayerHealth : MonoBehaviour
     public float chipSpeed = 1f;
     public Image frontHealthBar;
 
+    public Image HP1;
+    public Image HP2;
+    public Image HP3;
+
+    public Color activeColor = Color.white;  // Full health color
+    public Color grayColor = Color.gray;     // Gray color for low 
+
     [Header("Stamina Bar")]
     public float maxStamina = 10f;
     public float staminaDrainRate = 5f;   // Drain rate increased for faster effect
     public float staminaRegenRate = 3f;   // Faster regeneration
     public float regenDelay = 1f;         // Delay before regeneration starts
     public Image frontStaminaBar;
+
+
+
 
     public bool isRegeneratingStamina = false;
     private Coroutine regenCoroutine;
@@ -65,6 +75,52 @@ public class PlayerHealth : MonoBehaviour
         float fillF = frontHealthBar.fillAmount;
         float hFraction = health / maxHealth;
         frontHealthBar.fillAmount = Mathf.Lerp(fillF, hFraction, Time.deltaTime * chipSpeed);
+        UpdateHPIndicators();
+    }
+
+    private void UpdateHPIndicators()
+    {
+        float healthPercentage = health / maxHealth;
+
+        if (healthPercentage > 0.75f)
+        {
+            HP1.color = activeColor;
+            HP2.color = activeColor;
+            HP3.color = activeColor;
+        }
+        else if (healthPercentage > 0.50f)
+        {
+            HP1.color = grayColor;
+            HP2.color = activeColor;
+            HP3.color = activeColor;
+        }
+        else if (healthPercentage > 0.25f)
+        {
+            HP1.color = grayColor;
+            HP2.color = grayColor;
+            HP3.color = activeColor;
+        }
+        else
+        {
+            HP1.color = grayColor;
+            HP2.color = grayColor;
+            HP3.color = grayColor;
+            overlay.color = new Color(overlay.color.r, overlay.color.g, overlay.color.b, 1); // Overlay stays on
+        }
+    }
+
+    public void TakeDamage(float damage)
+    {
+        health -= damage;
+        lerpTimer = 0f;
+        durationTimer = 0;
+        overlay.color = new Color(overlay.color.r, overlay.color.g, overlay.color.b, 1);
+    }
+
+    public void RestoreHealth(float healAmount)
+    {
+        health += healAmount;
+        lerpTimer = 0f;
     }
 
     void UpdateStaminaUI()
@@ -72,7 +128,7 @@ public class PlayerHealth : MonoBehaviour
         if (frontStaminaBar != null)
         {
             frontStaminaBar.fillAmount = stamina / maxStamina;
-            Debug.Log($"Stamina UI Updated: {stamina}");
+            //Debug.Log($"Stamina UI Updated: {stamina}");
         }
     }
 
@@ -139,19 +195,7 @@ public class PlayerHealth : MonoBehaviour
         regenCoroutine = null;
     }
 
-    public void TakeDamage(float damage)
-    {
-        health -= damage;
-        lerpTimer = 0f;
-        durationTimer = 0;
-        overlay.color = new Color(overlay.color.r, overlay.color.g, overlay.color.b, 1);
-    }
-
-    public void RestoreHealth(float healAmount)
-    {
-        health += healAmount;
-        lerpTimer = 0f;
-    }
+    
 
     public bool CanUseStamina()
 {

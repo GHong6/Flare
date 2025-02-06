@@ -18,13 +18,6 @@ public class SearchState : BaseState
         if (enemy.CanSeePlayer())
             stateMachine.ChangeState(new AttackState());
 
-        if (enemy.IsPlayerRunning()) // Player was running before disappearing
-        {
-            enemy.LastKnownPos = enemy.Player.transform.position; // Update last known position
-            enemy.transform.LookAt(enemy.LastKnownPos); // Make enemy face that position
-        }
-
-
         if (enemy.Agent.remainingDistance < enemy.Agent.stoppingDistance)
         {
             searchTimer += Time.deltaTime;

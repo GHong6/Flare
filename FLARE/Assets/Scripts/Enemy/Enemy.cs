@@ -11,21 +11,15 @@ public class Enemy : MonoBehaviour
     private StateMachine stateMachine;
     private NavMeshAgent agent;
     private GameObject player;
-    private Vector3 lastKnownPos;
     private PlayerMovementAdvanced1 playerMovement;
+    private Vector3 lastKnownPos;
+    private bool investigating = false;
 
 
-    private float playerSpeedThreshold = 3.5f; // Adjust based on player speed
-    private bool isPlayerRunning = false;
-
-    public bool IsPlayerRunning()
-{
-    if (playerMovement != null)
-    {
-        return playerMovement.state == PlayerMovementAdvanced1.MovementState.sprinting;
-    }
-    return false;
-}
+    [Header("Sight & Hearing Settings")]
+    public float sightDistance = 10f;
+    public float fieldOfView = 95f;
+    public float eyeHeight;
 
     public NavMeshAgent Agent { get => agent; }
     public GameObject Player { get => player; }
@@ -33,15 +27,12 @@ public class Enemy : MonoBehaviour
     public Vector3 LastKnownPos { get => lastKnownPos; set => lastKnownPos = value; }
 
     public Path path;
-    public GameObject debugsphere;
+    //public GameObject debugsphere;
 
     [Header("Sound")]
     [SerializeField] public AudioSource gunShot;
 
-    [Header("Sight Value")]
-    public float sightDistance = 10f;
-    public float fieldOfView = 95f;
-    public float eyeHight;
+
     [Header("WeaponValue")]
     public Transform gunBarrel;
     [Range(0.1f, 10f)]
@@ -62,21 +53,47 @@ public class Enemy : MonoBehaviour
         agent = GetComponent<NavMeshAgent>();
         stateMachine.Initialise();
         player = GameObject.FindGameObjectWithTag("Player");
-
         if (player != null)
-        {
             playerMovement = player.GetComponent<PlayerMovementAdvanced1>();
-        }
     }
 
     // Update is called once per frame
     void Update()
     {
+        if (player == null || playerMovement == null)
+            return;
 
-        CanSeePlayer();
-        currentState = stateMachine.activeState.ToString();
-        debugsphere.transform.position = lastKnownPos;
+        bool canSeePlayer = CanSeePlayer();
+        bool isPlayerRunning = playerMovement.state == PlayerMovementAdvanced1.MovementState.sprinting;
+
+        // If the player is sprinting inside sight radius, update last known position
+        if (canSeePlayer && isPlayerRunning)
+        {
+            lastKnownPos = player.transform.position;
+            investigating = true;
+        }
+
+        if (investigating)
+        {
+            InvestigateLastKnownPosition();
+        }
     }
+
+
+    private void InvestigateLastKnownPosition()
+    {
+        if (agent.remainingDistance < 0.5f)
+        {
+            agent.SetDestination(lastKnownPos);
+        }
+
+        // Stop investigating after reaching the last known position
+        if (Vector3.Distance(transform.position, lastKnownPos) < 1f)
+        {
+            investigating = false;
+        }
+    }
+
 
     //public bool CanSeePlayer()
     //{
@@ -107,28 +124,29 @@ public class Enemy : MonoBehaviour
 
     public bool CanSeePlayer()
     {
-        if (player != null)
-        {
-            float distanceToPlayer = Vector3.Distance(transform.position, player.transform.position);
-            if (distanceToPlayer < sightDistance)
-            {
-                Vector3 targetDirection = (player.transform.position - transform.position).normalized;
-                float angleToPlayer = Vector3.Angle(transform.forward, targetDirection);
+        if (player == null)
+            return false;
 
-                if (angleToPlayer <= fieldOfView / 2)
-                {
-                    Ray ray = new Ray(transform.position + Vector3.up * eyeHight, targetDirection);
-                    if (Physics.Raycast(ray, out RaycastHit hitInfo, sightDistance))
-                    {
-                        if (hitInfo.transform.gameObject == player)
-                        {
-                            Debug.DrawRay(ray.origin, ray.direction * sightDistance, Color.red);
-                            return true;
-                        }
-                    }
-                }
+        float distanceToPlayer = Vector3.Distance(transform.position, player.transform.position);
+        if (distanceToPlayer > sightDistance)
+            return false;
+
+        Vector3 directionToPlayer = (player.transform.position - transform.position).normalized;
+        float angleToPlayer = Vector3.Angle(transform.forward, directionToPlayer);
+
+        if (angleToPlayer > fieldOfView / 2)
+            return false;
+
+        Ray ray = new Ray(transform.position + Vector3.up * eyeHeight, directionToPlayer);
+        if (Physics.Raycast(ray, out RaycastHit hitInfo, sightDistance))
+        {
+            if (hitInfo.transform.gameObject == player)
+            {
+                Debug.DrawRay(ray.origin, ray.direction * sightDistance, Color.red);
+                return true;
             }
         }
+
         return false;
     }
 
@@ -145,14 +163,14 @@ public class Enemy : MonoBehaviour
         Vector3 rightBoundary = Quaternion.Euler(0, fieldOfView / 2, 0) * forward;
 
         Gizmos.color = Color.yellow;
-        Gizmos.DrawLine(transform.position + Vector3.up * eyeHight, transform.position + leftBoundary * sightDistance + Vector3.up * eyeHight);
-        Gizmos.DrawLine(transform.position + Vector3.up * eyeHight, transform.position + rightBoundary * sightDistance + Vector3.up * eyeHight);
+        Gizmos.DrawLine(transform.position + Vector3.up * eyeHeight, transform.position + leftBoundary * sightDistance + Vector3.up * eyeHeight);
+        Gizmos.DrawLine(transform.position + Vector3.up * eyeHeight, transform.position + rightBoundary * sightDistance + Vector3.up * eyeHeight);
 
         // Draw player's position if visible
-        if (player != null && CanSeePlayer())
+        if (player != null && CanSeePlayer())   
         {
             Gizmos.color = Color.red;
-            Gizmos.DrawLine(transform.position + Vector3.up * eyeHight, player.transform.position);
+            Gizmos.DrawLine(transform.position + Vector3.up * eyeHeight, player.transform.position);
         }
     }
 
