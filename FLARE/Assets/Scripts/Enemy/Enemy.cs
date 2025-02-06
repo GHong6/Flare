@@ -12,6 +12,20 @@ public class Enemy : MonoBehaviour
     private NavMeshAgent agent;
     private GameObject player;
     private Vector3 lastKnownPos;
+    private PlayerMovementAdvanced1 playerMovement;
+
+
+    private float playerSpeedThreshold = 3.5f; // Adjust based on player speed
+    private bool isPlayerRunning = false;
+
+    public bool IsPlayerRunning()
+{
+    if (playerMovement != null)
+    {
+        return playerMovement.state == PlayerMovementAdvanced1.MovementState.sprinting;
+    }
+    return false;
+}
 
     public NavMeshAgent Agent { get => agent; }
     public GameObject Player { get => player; }
@@ -19,7 +33,10 @@ public class Enemy : MonoBehaviour
     public Vector3 LastKnownPos { get => lastKnownPos; set => lastKnownPos = value; }
 
     public Path path;
-    //public GameObject debugsphere;
+    public GameObject debugsphere;
+
+    [Header("Sound")]
+    [SerializeField] public AudioSource gunShot;
 
     [Header("Sight Value")]
     public float sightDistance = 10f;
@@ -30,6 +47,9 @@ public class Enemy : MonoBehaviour
     [Range(0.1f, 10f)]
     public float fireRate;
 
+    [HideInInspector]
+    public bool isShooting = false;
+
     [SerializeField]
     private string currentState;
 
@@ -37,18 +57,25 @@ public class Enemy : MonoBehaviour
 
     void Start()
     {
+        gunShot = GetComponent<AudioSource>();
         stateMachine = GetComponent<StateMachine>();
         agent = GetComponent<NavMeshAgent>();
         stateMachine.Initialise();
         player = GameObject.FindGameObjectWithTag("Player");
+
+        if (player != null)
+        {
+            playerMovement = player.GetComponent<PlayerMovementAdvanced1>();
+        }
     }
 
     // Update is called once per frame
     void Update()
     {
+
         CanSeePlayer();
         currentState = stateMachine.activeState.ToString();
-        //debugsphere.transform.position = lastKnownPos;
+        debugsphere.transform.position = lastKnownPos;
     }
 
     //public bool CanSeePlayer()

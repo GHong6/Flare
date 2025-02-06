@@ -9,6 +9,8 @@ public class AttackState : BaseState
     private float losePlayerTimer;
     private float shotTimer;
 
+
+
     public override void Enter()
     {
         
@@ -59,30 +61,33 @@ public class AttackState : BaseState
 
     public void Shoot()
     {
-        //gun barrel
+        if (!enemy.isShooting) // Prevent overlapping bursts
+        {
+            enemy.StartCoroutine(BurstFire());
+        }
+    }
+
+    private IEnumerator BurstFire()
+    {
+        enemy.isShooting = true; // Prevent re-triggering
+        int xcount = Random.Range(1, 6);
+        for (int i = 0; i < xcount; i++) // Fire 3 bullets
+        {
+            FireBullet();
+            enemy.gunShot.Play(); // Play gunshot sound
+            yield return new WaitForSeconds(0.08f); // Small delay between shots
+        }
+
+        yield return new WaitForSeconds(2f); // 2-second cooldown before next burst
+        enemy.isShooting = false; // Allow shooting again
+    }
+
+    private void FireBullet()
+    {
         Transform gunbarrel = enemy.gunBarrel;
-
-        //instantiate bullet
         GameObject bullet = GameObject.Instantiate(Resources.Load("Prefabs/Bullet") as GameObject, gunbarrel.position, enemy.transform.rotation);
-        //calculate direction of player
-        Vector3 shootDirection = (enemy.Player.transform.position - gunbarrel.transform.position).normalized;
-
+        Vector3 shootDirection = (enemy.Player.transform.position - gunbarrel.position).normalized;
         bullet.GetComponent<Rigidbody>().velocity = shootDirection * 40;
-        //bullet.GetComponent<Rigidbody>().velocity = Quaternion.AngleAxis(Random.Range(-3f, 3f), Vector3.up) * shootDirection * 40;
-
         Debug.Log("Shoot!!!!");
-        shotTimer = 0;
-    }
-
-    // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
     }
 }
