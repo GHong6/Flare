@@ -40,6 +40,9 @@ public class PlayerMovementAdvanced1 : MonoBehaviour
     //[Header("Stamina System")]
     //public float maxStamina = 10f;
     private float stamina;
+    public bool IsShooting { get; private set; } // Public getter, private setter
+
+
     //public float staminaDrainRate = 1f;
     //public float staminaRegenRate = 0.5f;
     //private bool isRegeneratingStamina = false;
@@ -204,6 +207,23 @@ public class PlayerMovementAdvanced1 : MonoBehaviour
     private Vector3 GetSlopeMoveDirection()
     {
         return Vector3.ProjectOnPlane(moveDirection, slopeHit.normal).normalized;
+    }
+
+    public void Shoot()
+    {
+        if (!IsShooting)
+        {
+            IsShooting = true;
+            StartCoroutine(ResetShooting());
+        }
+
+        // Shooting logic here
+    }
+
+    private IEnumerator ResetShooting()
+    {
+        yield return new WaitForSeconds(0.1f); // Adjust timing as needed
+        IsShooting = false;
     }
 
     private void ConsumeStamina()
