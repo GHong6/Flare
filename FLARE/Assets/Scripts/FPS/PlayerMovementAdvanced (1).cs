@@ -40,7 +40,13 @@ public class PlayerMovementAdvanced1 : MonoBehaviour
     //[Header("Stamina System")]
     //public float maxStamina = 10f;
     private float stamina;
-    public bool IsShooting { get; private set; } // Public getter, private setter
+
+    private bool isShooting = false; 
+    public bool IsShooting 
+    {
+        get { return isShooting; }
+        private set { isShooting = value; }
+    }
 
 
     //public float staminaDrainRate = 1f;
@@ -89,6 +95,7 @@ public class PlayerMovementAdvanced1 : MonoBehaviour
         SpeedControl();
         StateHandler();
 
+
         rb.drag = grounded ? groundDrag : 0;
     }
 
@@ -107,6 +114,11 @@ public class PlayerMovementAdvanced1 : MonoBehaviour
             readyToJump = false;
             Jump();
             Invoke(nameof(ResetJump), jumpCooldown);
+        }
+
+        if (Input.GetKeyDown(KeyCode.Mouse0)) // Detect left mouse button press
+        {
+            StartCoroutine(Shoot()); // Start shooting coroutine
         }
 
         if (Input.GetKeyDown(crouchKey))
@@ -209,22 +221,13 @@ public class PlayerMovementAdvanced1 : MonoBehaviour
         return Vector3.ProjectOnPlane(moveDirection, slopeHit.normal).normalized;
     }
 
-    public void Shoot()
+    private IEnumerator Shoot()
     {
-        if (!IsShooting)
-        {
-            IsShooting = true;
-            StartCoroutine(ResetShooting());
-        }
-
-        // Shooting logic here
-    }
-
-    private IEnumerator ResetShooting()
-    {
-        yield return new WaitForSeconds(0.1f); // Adjust timing as needed
+        IsShooting = true;
+        yield return new WaitForSeconds(1f); // Shooting lasts 1 second
         IsShooting = false;
     }
+
 
     private void ConsumeStamina()
     {

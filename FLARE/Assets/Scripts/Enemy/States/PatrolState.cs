@@ -12,7 +12,10 @@ public class PatrolState : BaseState
 
     public override void Perform()
     {
+        enemy.DetectPlayerActions(); // Always listen for gunshots/running
+
         PatrolCycle();
+
         if (enemy.CanSeePlayer())
         {
             stateMachine.ChangeState(new AttackState());

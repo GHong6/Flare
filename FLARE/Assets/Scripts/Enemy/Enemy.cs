@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
 
-
 public class Enemy : MonoBehaviour
 {
-    // Start is called before the first frame update
+
+    [SerializeField] private string debugState;
 
     private StateMachine stateMachine;
     private NavMeshAgent agent;
@@ -14,12 +14,23 @@ public class Enemy : MonoBehaviour
     private PlayerMovementAdvanced1 playerMovement;
     private Vector3 lastKnownPos;
     private bool investigating = false;
-
+    private bool alertMode = false;
+    private float alertTimer = 0f;
+    private float suspicionTimer = 0f;
+    private bool playerDetected = false;
+    private bool instantAttack = false;
 
     [Header("Sight & Hearing Settings")]
     public float sightDistance = 10f;
     public float fieldOfView = 95f;
     public float eyeHeight;
+    public float alertDuration = 60f;
+
+    [Header("Weapon Settings")]
+    public Transform gunBarrel;
+    public float fireRate;
+    public int minShots = 2;
+    public int maxShots = 6;
 
     public NavMeshAgent Agent { get => agent; }
     public GameObject Player { get => player; }
@@ -32,95 +43,87 @@ public class Enemy : MonoBehaviour
     [Header("Sound")]
     [SerializeField] public AudioSource gunShot;
 
-
-    [Header("WeaponValue")]
-    public Transform gunBarrel;
-    [Range(0.1f, 10f)]
-    public float fireRate;
-
-    [HideInInspector]
     public bool isShooting = false;
+
+
 
     [SerializeField]
     private string currentState;
-
-
 
     void Start()
     {
         gunShot = GetComponent<AudioSource>();
         stateMachine = GetComponent<StateMachine>();
         agent = GetComponent<NavMeshAgent>();
+        agent.angularSpeed = 720f; // Increase for faster turning (default is ~120-200)
+
         stateMachine.Initialise();
         player = GameObject.FindGameObjectWithTag("Player");
         if (player != null)
             playerMovement = player.GetComponent<PlayerMovementAdvanced1>();
     }
 
-    // Update is called once per frame
     void Update()
     {
+        DetectPlayerActions(); // Always check if player is running or shooting
+
         if (player == null || playerMovement == null)
             return;
 
         bool canSeePlayer = CanSeePlayer();
-        bool isPlayerRunning = playerMovement.state == PlayerMovementAdvanced1.MovementState.sprinting;
 
-        // If the player is sprinting inside sight radius, update last known position
-        if (canSeePlayer && isPlayerRunning)
+        if (canSeePlayer)
         {
-            lastKnownPos = player.transform.position;
-            investigating = true;
+            agent.isStopped = true;  // Stop walking
+            if (!playerDetected)
+            {
+                suspicionTimer += Time.deltaTime;
+                if (suspicionTimer >= 1f)
+                {
+                    playerDetected = true;
+                    AttackPlayer();
+                    debugState = "Attack";
+                }
+            }
+        }
+        else
+        {
+            agent.isStopped = false; // Resume walking when not seeing the player
+            suspicionTimer = 0f;
+            debugState = "Patrolling";
         }
 
-        if (investigating)
+        // Handle Alert Timer
+        if (alertMode)
         {
-            InvestigateLastKnownPosition();
+            alertTimer += Time.deltaTime;
+            if (alertTimer >= alertDuration)
+            {
+                alertMode = false;
+                alertTimer = 0f;
+                instantAttack = false;
+                debugState = "normal";
+            }
         }
     }
 
 
-    private void InvestigateLastKnownPosition()
+    private void AttackPlayer()
     {
-        if (agent.remainingDistance < 0.5f)
-        {
-            agent.SetDestination(lastKnownPos);
-        }
-
-        // Stop investigating after reaching the last known position
-        if (Vector3.Distance(transform.position, lastKnownPos) < 1f)
-        {
-            investigating = false;
-        }
+        StartCoroutine(FireShots());
     }
 
-
-    //public bool CanSeePlayer()
-    //{
-    //    if(player != null)
-    //    {
-    //        if(Vector3.Distance(transform.position,player.transform.position) < sightDistance)
-    //        {
-    //            Vector3 targetDiraction = player.transform.position - transform.position - (Vector3.up * eyeHight);
-    //            float angleToPlayer = Vector3.Angle(targetDiraction, transform.position);
-    //            if (angleToPlayer >= -fieldOfView && angleToPlayer <= fieldOfView)
-    //            {
-    //                Ray ray = new Ray(transform.position + (Vector3.up * eyeHight), targetDiraction);
-    //                RaycastHit hitInfo = new RaycastHit();
-    //                if (Physics.Raycast(ray, out hitInfo, sightDistance))
-    //                {
-    //                    if(hitInfo.transform.gameObject == player)
-    //                    {
-    //                        Debug.DrawRay(ray.origin, ray.direction * sightDistance);
-    //                        return true;
-    //                    }
-    //                }
-    //                Debug.DrawRay(ray.origin, ray.direction * sightDistance);
-    //            }
-    //        }
-    //    }
-    //    return false;
-    //}
+    private IEnumerator FireShots()
+    {
+        int shots = Random.Range(minShots, maxShots);
+        for (int i = 0; i < shots; i++)
+        {
+            Debug.Log("Enemy fires at player!");
+            yield return new WaitForSeconds(fireRate);
+        }
+        lastKnownPos = player.transform.position;
+        agent.SetDestination(lastKnownPos);
+    }
 
     public bool CanSeePlayer()
     {
@@ -150,28 +153,18 @@ public class Enemy : MonoBehaviour
         return false;
     }
 
+    public void DetectPlayerActions()
+{
+        bool isPlayerRunning = playerMovement.state == PlayerMovementAdvanced1.MovementState.sprinting;
+        bool isPlayerShooting = playerMovement.IsShooting;
 
-    void OnDrawGizmos()
+        if ((isPlayerRunning || isPlayerShooting) && Vector3.Distance(transform.position, player.transform.position) <= sightDistance)
     {
-        // Draw sight radius
-        Gizmos.color = Color.green;
-        Gizmos.DrawWireSphere(transform.position, sightDistance);
-
-        // Draw field of view
-        Vector3 forward = transform.forward;
-        Vector3 leftBoundary = Quaternion.Euler(0, -fieldOfView / 2, 0) * forward;
-        Vector3 rightBoundary = Quaternion.Euler(0, fieldOfView / 2, 0) * forward;
-
-        Gizmos.color = Color.yellow;
-        Gizmos.DrawLine(transform.position + Vector3.up * eyeHeight, transform.position + leftBoundary * sightDistance + Vector3.up * eyeHeight);
-        Gizmos.DrawLine(transform.position + Vector3.up * eyeHeight, transform.position + rightBoundary * sightDistance + Vector3.up * eyeHeight);
-
-        // Draw player's position if visible
-        if (player != null && CanSeePlayer())   
-        {
-            Gizmos.color = Color.red;
-            Gizmos.DrawLine(transform.position + Vector3.up * eyeHeight, player.transform.position);
-        }
+        lastKnownPos = player.transform.position;
+        alertMode = true;
+        stateMachine.ChangeState(new SearchState());  // Start investigating
     }
+}
+
 
 }

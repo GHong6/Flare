@@ -153,7 +153,7 @@ public class PlayerHealth : MonoBehaviour
             stamina = Mathf.Clamp(stamina, 0, maxStamina);
             UpdateStaminaUI();
 
-            Debug.Log($"Consuming Stamina: {stamina}");
+            //Debug.Log($"Consuming Stamina: {stamina}");
 
             // If stamina is drained, start regeneration
             if (stamina <= 0)
@@ -177,7 +177,7 @@ public class PlayerHealth : MonoBehaviour
     private IEnumerator RegenerateStamina()
     {
         isRegeneratingStamina = true;
-        Debug.Log("Stamina Regeneration Started...");
+        //Debug.Log("Stamina Regeneration Started...");
 
         yield return new WaitForSeconds(regenDelay);
 
@@ -186,11 +186,11 @@ public class PlayerHealth : MonoBehaviour
             stamina += staminaRegenRate * Time.deltaTime;
             stamina = Mathf.Clamp(stamina, 0, maxStamina);
             UpdateStaminaUI();
-            Debug.Log($"Regenerating Stamina: {stamina}");
+            //Debug.Log($"Regenerating Stamina: {stamina}");
             yield return null;
         }
 
-        Debug.Log("Stamina Fully Regenerated!");
+        
         isRegeneratingStamina = false;
         regenCoroutine = null;
     }
