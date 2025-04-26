@@ -22,6 +22,7 @@ public class ThirdPersonCam : MonoBehaviour
     public GameObject combatCam;
     public GameObject aimCam;
     public GameObject topDownCam;
+    public GameObject FPSCam;
 
     public bool aim;
     [SerializeField]
@@ -35,6 +36,14 @@ public class ThirdPersonCam : MonoBehaviour
     [SerializeField] private CinemachineVirtualCamera combatVirtualCamera;
     [SerializeField] private CinemachineVirtualCamera aimVirtualCamera;
 
+    private Cinemachine3rdPersonFollow combatFollow;
+    private Cinemachine3rdPersonFollow aimFollow;
+    private bool isRightShoulder = true;
+
+    public bool allowRotation = true;
+    public bool inventoryOpen = false;
+
+
 
     public CameraStyle currentStyle;
     public enum CameraStyle 
@@ -42,7 +51,8 @@ public class ThirdPersonCam : MonoBehaviour
         Basic,
         Combat,
         Aim,
-        Topdown
+        Topdown,
+        FPS
     }
 
     private void Awake()
@@ -56,10 +66,25 @@ public class ThirdPersonCam : MonoBehaviour
 
         cameraTransform = Camera.main.transform;
 
+        combatFollow = combatVirtualCamera.GetCinemachineComponent<Cinemachine3rdPersonFollow>();
+        aimFollow = aimVirtualCamera.GetCinemachineComponent<Cinemachine3rdPersonFollow>();
+
     }
 
+    private float lastRightClickTime = 0f;
+    private float doubleClickThreshold = 0.3f;
     private void Update()
     {
+
+
+        if (!allowRotation || inventoryOpen) return;
+
+        if (Input.GetKeyDown(KeyCode.LeftAlt))
+        {
+            isRightShoulder = !isRightShoulder;
+            UpdateShoulderView();
+        }
+
         Debug.Log(currentStyle);
         // switch styles
         if (Input.GetKeyDown(KeyCode.Alpha1))
@@ -77,6 +102,10 @@ public class ThirdPersonCam : MonoBehaviour
             SwitchCameraStyle(CameraStyle.Topdown);
         }
 
+        else if (IsDoubleRightClick() || Input.GetKeyDown(KeyCode.V))
+        {
+            SwitchCameraStyle(CameraStyle.FPS);
+        }
 
         if (Input.GetMouseButtonDown(1))
         {
@@ -104,6 +133,7 @@ public class ThirdPersonCam : MonoBehaviour
 
         Vector3 viewDir = player.position - new Vector3(transform.position.x, player.position.y, transform.position.z);
         orientation.forward = viewDir.normalized;
+
         if(currentStyle == CameraStyle.Basic || currentStyle == CameraStyle.Topdown)
         {
             float horizontalInput = Input.GetAxis("Horizontal");
@@ -160,13 +190,29 @@ public class ThirdPersonCam : MonoBehaviour
         }
 
 
+
     }
 
+    private void UpdateShoulderView()
+    {
+        // Set combat camera values
+        float combatScreenX = isRightShoulder ? 0.4f : 0.6f;
+        var combatComposer = combatVirtualCamera.GetCinemachineComponent<CinemachineFramingTransposer>();
+        if (combatComposer != null)
+            combatComposer.m_ScreenX = combatScreenX;
+
+        // Set aim camera values
+        float aimScreenX = isRightShoulder ? 0.25f : 0.75f;
+        var aimComposer = aimVirtualCamera.GetCinemachineComponent<CinemachineFramingTransposer>();
+        if (aimComposer != null)
+            aimComposer.m_ScreenX = aimScreenX;
+    }
     private void SwitchCameraStyle(CameraStyle newStyle)
     {
         combatCam.SetActive(false);
         thirdPersonCam.SetActive(false);
         topDownCam.SetActive(false);
+        FPSCam.SetActive(false);
 
 
 
@@ -179,6 +225,7 @@ public class ThirdPersonCam : MonoBehaviour
             //combatVirtualCamera.gameObject.SetActive(true);
         }
         if (newStyle == CameraStyle.Topdown) topDownCam.SetActive(true);
+        if (newStyle == CameraStyle.FPS) FPSCam.SetActive(true);
 
         currentStyle = newStyle;
 
@@ -192,7 +239,8 @@ public class ThirdPersonCam : MonoBehaviour
         thirdPersonCanvas.enabled = false;
         combatCam.SetActive(false);
         aimCam.SetActive(true);
-        
+
+        UpdateShoulderView(); // Add this
     }
 
     private void CancelAim()
@@ -202,6 +250,20 @@ public class ThirdPersonCam : MonoBehaviour
         thirdPersonCanvas.enabled = true;
         aimCam.SetActive(false);
 
+        UpdateShoulderView(); // Add this
+    }
+
+    private bool IsDoubleRightClick()
+    {
+        if (Input.GetMouseButtonDown(1)) // Right-click is Mouse Button 1
+        {
+            if (Time.time - lastRightClickTime < doubleClickThreshold)
+            {
+                return true; // Detected double right-click
+            }
+            lastRightClickTime = Time.time;
+        }
+        return false;
     }
 
 
