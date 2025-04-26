@@ -11,16 +11,10 @@ public class PlayerInventory : MonoBehaviour
     public MonoBehaviour shoot; // Reference to the Shoot script on the player
     public Gun gunScript; // Reference to the Gun script to check reload state
 
-    public bool allowMouseLook = true;
-
     private bool isInventoryOpen = false;
-
 
     void Update()
     {
-
-        if (!allowMouseLook) return;
-
         // Check if the toggle key is pressed
         if (Input.GetKeyDown(toggleKey))
         {
@@ -45,40 +39,27 @@ public class PlayerInventory : MonoBehaviour
         // Manage cursor state and disable/enable controls
         if (isInventoryOpen)
         {
-            Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;
+            Cursor.lockState = CursorLockMode.None; // Unlock the cursor
+            Cursor.visible = true;                 // Show the cursor
 
-            // Freeze player input
-            if (playerController != null)
-                playerController.enabled = false;
-
-            //Prevent mouse look
-            //if (cameraController is MonoBehaviour cameraInputScript)
-            //    cameraInputScript.enabled = false;
-
-            if (cameraController is ThirdPersonCam camScript)
-                camScript.allowRotation = false;
-
-
+            cameraController.enabled = false; // Disable camera look-around
             gunSway.enabled = false;
-            shoot.enabled = false;
+            shoot.enabled = false; // Disable the Shoot script
+
+            if (playerController != null)
+                playerController.enabled = false; // Disable player movement (optional)
         }
         else
         {
-            Cursor.lockState = CursorLockMode.Locked;
-            Cursor.visible = false;
+            Cursor.lockState = CursorLockMode.Locked; // Lock the cursor
+            Cursor.visible = false;                  // Hide the cursor
+
+            cameraController.enabled = true; // Enable camera look-around
+            gunSway.enabled = true;
+            shoot.enabled = true; // Enable the Shoot script
 
             if (playerController != null)
-                playerController.enabled = true;
-
-            //if (cameraController is MonoBehaviour cameraInputScript)
-            //    cameraInputScript.enabled = true;
-
-            if (cameraController is ThirdPersonCam camScript)
-                camScript.inventoryOpen = true;
-
-            gunSway.enabled = true;
-            shoot.enabled = true;
+                playerController.enabled = true; // Enable player movement (optional)
         }
     }
 }

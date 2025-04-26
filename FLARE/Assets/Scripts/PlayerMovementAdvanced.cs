@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -46,25 +46,20 @@ public class PlayerMovementAdvanced : MonoBehaviour
 
     [Header("Aim & Shoot")]
     public Transform orientation;
-    public Transform playerObj;
     public Transform cameraTransform;
 
     [SerializeField]
     private GameObject bulletPrefab;
-    //[SerializeField]
-    //private Transform barrelTransform;
+    [SerializeField]
+    private Transform barrelTransform;
     [SerializeField]
     private Transform bulletParent;
     [SerializeField]
     private float bulletRange = 50f;
 
-    private Animator animator;
 
     float horizontalInput;
     float verticalInput;
-
-    public bool isAiming1;
-
 
     Vector3 moveDirection;
 
@@ -73,24 +68,17 @@ public class PlayerMovementAdvanced : MonoBehaviour
     public MovementState state;
     public enum MovementState
     {
-        standing,
         walking,
         sprinting,
         crouching,
         sliding,
-        air,
-        aiming
+        air
     }
 
     public bool sliding;
 
     private void Start()
     {
-
-        rb = GetComponent<Rigidbody>();
-        animator = GetComponent<Animator>();
-
-
         rb = GetComponent<Rigidbody>();
         rb.freezeRotation = true;
 
@@ -101,25 +89,25 @@ public class PlayerMovementAdvanced : MonoBehaviour
 
 
 
-    //private void ShootGun()
-    //{
-    //    RaycastHit hit;
-    //    GameObject bullet = GameObject.Instantiate(bulletPrefab, barrelTransform.position, Quaternion.identity, bulletParent);
-    //    BulletController bulletController = bullet.GetComponent<BulletController>();
-    //    if (Physics.Raycast(cameraTransform.position, cameraTransform.forward, out hit, Mathf.Infinity))
-    //    {
+    private void ShootGun()
+    {
+        RaycastHit hit;
+        GameObject bullet = GameObject.Instantiate(bulletPrefab, barrelTransform.position, Quaternion.identity, bulletParent);
+        BulletController bulletController = bullet.GetComponent<BulletController>();
+        if (Physics.Raycast(cameraTransform.position, cameraTransform.forward, out hit, Mathf.Infinity))
+        {
             
-    //        bulletController.target = hit.point;
-    //        bulletController.hit = true;
-    //    }
-    //    else
-    //    {
+            bulletController.target = hit.point;
+            bulletController.hit = true;
+        }
+        else
+        {
    
-    //        bulletController.target = cameraTransform.position + cameraTransform.forward * bulletRange;
-    //        bulletController.hit = false;
-    //    }
+            bulletController.target = cameraTransform.position + cameraTransform.forward * bulletRange;
+            bulletController.hit = false;
+        }
 
-    //}
+    }
 
 
     private void Update()
@@ -130,17 +118,12 @@ public class PlayerMovementAdvanced : MonoBehaviour
         MyInput();
         SpeedControl();
         StateHandler();
-        //RotatePlayerObj();
-        //UpdateOrientationDirection();
-
-        HandleAnimations();
 
         // handle drag
         if (grounded)
             rb.drag = groundDrag;
         else
             rb.drag = 0;
-
     }
 
     private void FixedUpdate()
@@ -180,7 +163,7 @@ public class PlayerMovementAdvanced : MonoBehaviour
         //SHOOT
         if (Input.GetMouseButtonDown(0))
         {
-            //ShootGun();
+            ShootGun();
         }
     }
 
@@ -190,51 +173,43 @@ public class PlayerMovementAdvanced : MonoBehaviour
         if (sliding)
         {
             state = MovementState.sliding;
-            desiredMoveSpeed = OnSlope() && rb.velocity.y < 0.1f ? slideSpeed : sprintSpeed;
+
+            if (OnSlope() && rb.velocity.y < 0.1f)
+                desiredMoveSpeed = slideSpeed;
+
+            else
+                desiredMoveSpeed = sprintSpeed;
         }
-        else if (grounded && Input.GetMouseButton(1) && horizontalInput == 0 && verticalInput == 0)
-        {
-            state = MovementState.aiming;
-            desiredMoveSpeed = 0f;
-            isAiming1 = true;
-        }
+
+        // Mode - Crouching
         else if (Input.GetKey(crouchKey))
         {
             state = MovementState.crouching;
             desiredMoveSpeed = crouchSpeed;
         }
-        else if (grounded && Input.GetKey(sprintKey) && (horizontalInput != 0 || verticalInput != 0))
+
+        // Mode - Sprinting
+        else if(grounded && Input.GetKey(sprintKey))
         {
             state = MovementState.sprinting;
             desiredMoveSpeed = sprintSpeed;
         }
-        else if (grounded && (horizontalInput != 0 || verticalInput != 0))
+
+        // Mode - Walking
+        else if (grounded)
         {
             state = MovementState.walking;
             desiredMoveSpeed = walkSpeed;
         }
-        else if (grounded)
-        {
-            state = MovementState.standing;
-            desiredMoveSpeed = 0f;
-        }
+
+        // Mode - Air
         else
         {
             state = MovementState.air;
         }
 
-        if (Input.GetMouseButton(1))
-        {
-            isAiming1 = true;
-        }
-
-        if (!Input.GetMouseButton(1))
-        {
-            isAiming1 = false;
-        }
-
         // check if desiredMoveSpeed has changed drastically
-        if (Mathf.Abs(desiredMoveSpeed - lastDesiredMoveSpeed) > 4f && moveSpeed != 0)
+        if(Mathf.Abs(desiredMoveSpeed - lastDesiredMoveSpeed) > 4f && moveSpeed != 0)
         {
             StopAllCoroutines();
             StartCoroutine(SmoothlyLerpMoveSpeed());
@@ -245,9 +220,7 @@ public class PlayerMovementAdvanced : MonoBehaviour
         }
 
         lastDesiredMoveSpeed = desiredMoveSpeed;
-
     }
-
 
     private IEnumerator SmoothlyLerpMoveSpeed()
     {
@@ -280,7 +253,6 @@ public class PlayerMovementAdvanced : MonoBehaviour
     {
         // calculate movement direction
         moveDirection = orientation.forward * verticalInput + orientation.right * horizontalInput;
-        //moveDirection1 = playerObj.forward * verticalInput + playerObj.right * horizontalInput;
 
         // on slope
         if (OnSlope() && !exitingSlope)
@@ -302,27 +274,6 @@ public class PlayerMovementAdvanced : MonoBehaviour
         // turn gravity off while on slope
         rb.useGravity = !OnSlope();
     }
-
-    private void UpdateOrientationDirection()
-    {
-        if (state != MovementState.standing)
-        {
-            Vector3 viewDir = cameraTransform.forward;
-            viewDir.y = 0;
-            orientation.forward = viewDir.normalized;
-        }
-    }
-    private void RotatePlayerObj()
-    {
-        if (state == MovementState.walking || state == MovementState.sprinting || state == MovementState.aiming)
-        {
-            Vector3 lookDirection = new Vector3(cameraTransform.forward.x, 0, cameraTransform.forward.z).normalized;
-            Quaternion targetRotation = Quaternion.LookRotation(lookDirection);
-            playerObj.rotation = Quaternion.Slerp(playerObj.rotation, targetRotation, Time.deltaTime * 10f);
-        }
-    }
-
-    
 
     private void SpeedControl()
     {
@@ -378,19 +329,4 @@ public class PlayerMovementAdvanced : MonoBehaviour
     {
         return Vector3.ProjectOnPlane(direction, slopeHit.normal).normalized;
     }
-
-    private void HandleAnimations()
-    {
-        if (!animator) return;
-
-        float inputMagnitude = new Vector2(horizontalInput, verticalInput).magnitude;
-        float animSpeed = inputMagnitude * moveSpeed;
-
-        animator.SetFloat("Speed", animSpeed);
-        animator.SetBool("Grounded", grounded);
-        animator.SetBool("IsCrouching", state == MovementState.crouching);
-        animator.SetBool("IsSliding", state == MovementState.sliding);
-        animator.SetBool("IsAiming", state == MovementState.aiming);
-    }
-
 }
