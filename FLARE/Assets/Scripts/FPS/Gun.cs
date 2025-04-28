@@ -118,6 +118,9 @@ public class Gun : MonoBehaviour
         {
             if (CanShoot())
             {
+                Ray ray = new Ray(cam.position, cam.forward);
+                Debug.DrawRay(ray.origin, ray.direction * gunData.maxDistance, Color.green, 1f);
+
                 if (Physics.Raycast(cam.position, cam.forward, out RaycastHit hitInfo, gunData.maxDistance))
                 {
                     IDamageable damageable = hitInfo.transform.GetComponent<IDamageable>();
