@@ -11,7 +11,6 @@ public class PlayerHealth : MonoBehaviour
     [Header("Health Bar")]
     public float maxHealth = 100f;
     public float chipSpeed = 1f;
-    public Image frontHealthBar;
 
     public Image HP1;
     public Image HP2;
@@ -56,6 +55,7 @@ public class PlayerHealth : MonoBehaviour
 
         UpdateHealthUI();
         UpdateStaminaUI();
+        //Debug.Log(stamina);
 
         if (overlay.color.a > 0)
         {
@@ -72,9 +72,9 @@ public class PlayerHealth : MonoBehaviour
 
     public void UpdateHealthUI()
     {
-        float fillF = frontHealthBar.fillAmount;
+
         float hFraction = health / maxHealth;
-        frontHealthBar.fillAmount = Mathf.Lerp(fillF, hFraction, Time.deltaTime * chipSpeed);
+        
         UpdateHPIndicators();
     }
 
@@ -147,7 +147,8 @@ public class PlayerHealth : MonoBehaviour
 
     public void ConsumeStamina()
     {
-        if (!isRegeneratingStamina)
+        // Only allow stamina consumption if stamina is greater than 0 and not regenerating
+        if (stamina > 0 && !isRegeneratingStamina)
         {
             stamina -= staminaDrainRate * Time.deltaTime;
             stamina = Mathf.Clamp(stamina, 0, maxStamina);
@@ -163,6 +164,11 @@ public class PlayerHealth : MonoBehaviour
                     regenCoroutine = StartCoroutine(RegenerateStamina());
                 }
             }
+        }
+        else if (stamina == 0 && regenCoroutine == null)
+        {
+            // Optionally debug or inform that stamina is empty and needs to regenerate
+            // Debug.Log("Stamina is empty, waiting for regeneration to reach 100%");
         }
     }
 
@@ -201,4 +207,10 @@ public class PlayerHealth : MonoBehaviour
 {
     return stamina > 0; // Allows movement to check if sprinting is possible
 }
+
+    public float GetStamina()
+    {
+        return stamina; // Return current stamina value
+    }
+
 }

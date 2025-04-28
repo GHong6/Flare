@@ -11,6 +11,13 @@ public class InventoryManager : MonoBehaviour
     [SerializeField] private Gun gun;
     public bool AddItem(Item item)
     {
+
+        if (item == null)
+        {
+            Debug.LogError("Trying to add a null item to inventory!");
+            return false;
+        }
+
         for (int i = 0; i < inventorySlots.Length; i++)
         {
             InventorySlot slot = inventorySlots[i];

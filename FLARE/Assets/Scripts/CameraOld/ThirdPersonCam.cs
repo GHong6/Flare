@@ -85,7 +85,7 @@ public class ThirdPersonCam : MonoBehaviour
             UpdateShoulderView();
         }
 
-        Debug.Log(currentStyle);
+        //Debug.Log(currentStyle);
         // switch styles
         if (Input.GetKeyDown(KeyCode.Alpha1))
         {

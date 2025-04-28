@@ -83,9 +83,11 @@ public class PlayerMovementAdvanced : MonoBehaviour
     }
 
     public bool sliding;
-
+    private PlayerHealth playerHealth;
+    //private float stamina;
     private void Start()
     {
+        playerHealth = Object.FindFirstObjectByType<PlayerHealth>();
 
         rb = GetComponent<Rigidbody>();
         animator = GetComponent<Animator>();
@@ -95,6 +97,7 @@ public class PlayerMovementAdvanced : MonoBehaviour
         rb.freezeRotation = true;
 
         readyToJump = true;
+        //stamina = playerHealth.maxStamina;
 
         startYScale = transform.localScale.y;
     }
@@ -126,6 +129,8 @@ public class PlayerMovementAdvanced : MonoBehaviour
     {
         // ground check
         grounded = Physics.Raycast(transform.position, Vector3.down, playerHeight * 0.5f + 0.2f, whatIsGround);
+
+        Debug.Log($"State: {state}, moveSpeed: {moveSpeed}, stamina: {playerHealth.GetStamina()}");
 
         MyInput();
         SpeedControl();
@@ -203,20 +208,25 @@ public class PlayerMovementAdvanced : MonoBehaviour
             state = MovementState.crouching;
             desiredMoveSpeed = crouchSpeed;
         }
-        else if (grounded && Input.GetKey(sprintKey) && (horizontalInput != 0 || verticalInput != 0))
+        else if (grounded && Input.GetKey(sprintKey) && (horizontalInput != 0 || verticalInput != 0) && playerHealth.GetStamina() > 0)
         {
             state = MovementState.sprinting;
             desiredMoveSpeed = sprintSpeed;
+            playerHealth.ConsumeStamina();
         }
+        // Walking - if stamina is 0 or not sprinting
         else if (grounded && (horizontalInput != 0 || verticalInput != 0))
         {
             state = MovementState.walking;
             desiredMoveSpeed = walkSpeed;
+            playerHealth.StartStaminaRegen();
         }
+        // Standing still
         else if (grounded)
         {
             state = MovementState.standing;
             desiredMoveSpeed = 0f;
+            playerHealth.StartStaminaRegen();
         }
         else
         {
@@ -268,7 +278,8 @@ public class PlayerMovementAdvanced : MonoBehaviour
                 time += Time.deltaTime * speedIncreaseMultiplier * slopeIncreaseMultiplier * slopeAngleIncrease;
             }
             else
-                time += Time.deltaTime * speedIncreaseMultiplier;
+                //time += Time.deltaTime * speedIncreaseMultiplier;
+                time += Time.deltaTime * speedIncreaseMultiplier * 10f;
 
             yield return null;
         }
@@ -392,5 +403,8 @@ public class PlayerMovementAdvanced : MonoBehaviour
         animator.SetBool("IsSliding", state == MovementState.sliding);
         animator.SetBool("IsAiming", state == MovementState.aiming);
     }
+
+
+
 
 }

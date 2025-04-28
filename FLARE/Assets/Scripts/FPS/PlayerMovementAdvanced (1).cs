@@ -232,18 +232,5 @@ public class PlayerMovementAdvanced1 : MonoBehaviour
     }
 
 
-    private void ConsumeStamina()
-    {
-        if (!playerHealth.isRegeneratingStamina)
-        {
-            stamina -= playerHealth.staminaDrainRate * Time.deltaTime;
-            stamina = Mathf.Clamp(stamina, 0, playerHealth.maxStamina);
-            Debug.Log($"Stamina Draining: {stamina}");
-
-            if (playerHealth != null)
-            {
-                playerHealth.SetStamina(stamina);
-            }
-        }
-    }
+   
 }
