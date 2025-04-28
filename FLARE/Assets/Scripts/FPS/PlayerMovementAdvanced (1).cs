@@ -37,8 +37,6 @@ public class PlayerMovementAdvanced1 : MonoBehaviour
     private RaycastHit slopeHit;
     private bool exitingSlope;
 
-
-
     //[Header("Stamina System")]
     //public float maxStamina = 10f;
     private float stamina;
@@ -56,7 +54,6 @@ public class PlayerMovementAdvanced1 : MonoBehaviour
     //private bool isRegeneratingStamina = false;
 
     public Transform orientation;
-    public Transform cameraTransform;
 
     float horizontalInput;
     float verticalInput;
