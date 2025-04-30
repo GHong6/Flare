@@ -84,6 +84,9 @@ public class PlayerMovementAdvanced : MonoBehaviour
 
     public bool sliding;
     private PlayerHealth playerHealth;
+
+
+    private bool canSprint = true;
     //private float stamina;
     private void Start()
     {
@@ -208,11 +211,22 @@ public class PlayerMovementAdvanced : MonoBehaviour
             state = MovementState.crouching;
             desiredMoveSpeed = crouchSpeed;
         }
-        else if (grounded && Input.GetKey(sprintKey) && (horizontalInput != 0 || verticalInput != 0) && playerHealth.GetStamina() > 0)
+
+        //RUNNING
+        else if (grounded && Input.GetKey(sprintKey) && (horizontalInput != 0 || verticalInput != 0))
         {
-            state = MovementState.sprinting;
-            desiredMoveSpeed = sprintSpeed;
-            playerHealth.ConsumeStamina();
+            if (playerHealth.GetStamina() > 0 && !playerHealth.IsStaminaDepleted())
+            {
+                state = MovementState.sprinting;
+                desiredMoveSpeed = sprintSpeed;
+                playerHealth.ConsumeStamina();
+            }
+            else
+            {
+                // Either stamina is 0 and depleted, or stamina is 0 but not yet regenerated
+                state = MovementState.walking;
+                desiredMoveSpeed = walkSpeed;
+            }
         }
         // Walking - if stamina is 0 or not sprinting
         else if (grounded && (horizontalInput != 0 || verticalInput != 0))
@@ -220,13 +234,18 @@ public class PlayerMovementAdvanced : MonoBehaviour
             state = MovementState.walking;
             desiredMoveSpeed = walkSpeed;
             playerHealth.StartStaminaRegen();
+
+            if (playerHealth.GetStamina() >= playerHealth.maxStamina)
+                canSprint = true;
         }
-        // Standing still
         else if (grounded)
         {
             state = MovementState.standing;
             desiredMoveSpeed = 0f;
             playerHealth.StartStaminaRegen();
+
+            if (playerHealth.GetStamina() >= playerHealth.maxStamina)
+                canSprint = true;
         }
         else
         {

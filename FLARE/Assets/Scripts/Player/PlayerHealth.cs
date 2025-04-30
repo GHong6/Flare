@@ -39,6 +39,12 @@ public class PlayerHealth : MonoBehaviour
 
     private float durationTimer;
 
+
+    private bool isRegenerating = false;
+    private bool staminaDepleted = false;
+
+    public bool IsRegenerating() => isRegenerating;
+    public bool IsStaminaDepleted() => staminaDepleted;
     void Start()
     {
         health = maxHealth;
@@ -123,13 +129,10 @@ public class PlayerHealth : MonoBehaviour
         lerpTimer = 0f;
     }
 
-    void UpdateStaminaUI()
+    private void UpdateStaminaUI()
     {
         if (frontStaminaBar != null)
-        {
             frontStaminaBar.fillAmount = stamina / maxStamina;
-            //Debug.Log($"Stamina UI Updated: {stamina}");
-        }
     }
 
     public void SetStamina(float newStamina)
@@ -147,61 +150,42 @@ public class PlayerHealth : MonoBehaviour
 
     public void ConsumeStamina()
     {
-        // Only allow stamina consumption if stamina is greater than 0 and not regenerating
-        if (stamina > 0 && !isRegeneratingStamina)
+        if (stamina > 0)
         {
             stamina -= staminaDrainRate * Time.deltaTime;
-            stamina = Mathf.Clamp(stamina, 0, maxStamina);
-            UpdateStaminaUI();
+            staminaDepleted = stamina <= 0;
 
-            //Debug.Log($"Consuming Stamina: {stamina}");
+            if (regenCoroutine != null)
+                StopCoroutine(regenCoroutine);
 
-            // If stamina is drained, start regeneration
-            if (stamina <= 0)
-            {
-                if (regenCoroutine == null)
-                {
-                    regenCoroutine = StartCoroutine(RegenerateStamina());
-                }
-            }
-        }
-        else if (stamina == 0 && regenCoroutine == null)
-        {
-            // Optionally debug or inform that stamina is empty and needs to regenerate
-            // Debug.Log("Stamina is empty, waiting for regeneration to reach 100%");
+            regenCoroutine = StartCoroutine(RegenStaminaWithDelay());
         }
     }
+
 
     public void StartStaminaRegen()
     {
         if (regenCoroutine == null)
         {
-            regenCoroutine = StartCoroutine(RegenerateStamina());
+            regenCoroutine = StartCoroutine(RegenStaminaWithDelay());
         }
     }
 
-    private IEnumerator RegenerateStamina()
+    private IEnumerator RegenStaminaWithDelay()
     {
-        isRegeneratingStamina = true;
-        //Debug.Log("Stamina Regeneration Started...");
-
         yield return new WaitForSeconds(regenDelay);
 
         while (stamina < maxStamina)
         {
             stamina += staminaRegenRate * Time.deltaTime;
-            stamina = Mathf.Clamp(stamina, 0, maxStamina);
-            UpdateStaminaUI();
-            //Debug.Log($"Regenerating Stamina: {stamina}");
+            staminaDepleted = false;
             yield return null;
         }
 
-        
-        isRegeneratingStamina = false;
         regenCoroutine = null;
     }
 
-    
+
 
     public bool CanUseStamina()
 {
@@ -210,7 +194,8 @@ public class PlayerHealth : MonoBehaviour
 
     public float GetStamina()
     {
-        return stamina; // Return current stamina value
+        return stamina;
     }
 
+  
 }
