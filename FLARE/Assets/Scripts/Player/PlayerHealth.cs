@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -65,7 +65,12 @@ public class PlayerHealth : MonoBehaviour
 
         if (overlay.color.a > 0)
         {
-            if (health < maxHealth * 0.25f) return;
+            if (health < maxHealth * 0.25f)
+            {
+
+                //Debug.Log($"health {health} maxHealth * 0.25f {maxHealth * 0.25f}");
+                return;
+            }
             durationTimer += Time.deltaTime;
             if (durationTimer > duration)
             {
@@ -74,6 +79,12 @@ public class PlayerHealth : MonoBehaviour
                 overlay.color = new Color(overlay.color.r, overlay.color.g, overlay.color.b, tempAlpha);
             }
         }
+
+        //Debug.Log($"[Overlay] Health: {health} / {maxHealth} = {health / maxHealth}");
+        //Debug.Log($"[Overlay] Overlay Alpha: {overlay.color.a}");
+        //Debug.Log($"health {health}   maxHealth * 0.25f   {maxHealth * 0.25f}");
+
+
     }
 
     public void UpdateHealthUI()

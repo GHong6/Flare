@@ -7,11 +7,11 @@ public class Path : MonoBehaviour
 
     public List<Transform> waypoints;
     [SerializeField]
-    private bool alwaysDrawPath;
+    public bool alwaysDrawPath;
     [SerializeField]
-    private bool drawAsLoop;
-    [SerializeField]
-    private bool drawNumbers;
+    public bool drawAsLoop;
+    [SerializeField] private bool drawNumbers;
+    public bool DrawNumbers => drawNumbers;
     public Color debugColour = Color.white;
 
     public void OnDrawGizmos()

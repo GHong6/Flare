@@ -11,7 +11,7 @@ public class Enemy : MonoBehaviour
     private StateMachine stateMachine;
     private NavMeshAgent agent;
     private GameObject player;
-    private PlayerMovementAdvanced1 playerMovement;
+    private PlayerMovementAdvanced playerMovement;
     private Vector3 lastKnownPos;
     private bool investigating = false;
     private bool alertMode = false;
@@ -60,7 +60,7 @@ public class Enemy : MonoBehaviour
         stateMachine.Initialise();
         player = GameObject.FindGameObjectWithTag("Player");
         if (player != null)
-            playerMovement = player.GetComponent<PlayerMovementAdvanced1>();
+            playerMovement = player.GetComponent<PlayerMovementAdvanced>();
     }
 
     void Update()
@@ -155,7 +155,7 @@ public class Enemy : MonoBehaviour
 
     public void DetectPlayerActions()
 {
-        bool isPlayerRunning = playerMovement.state == PlayerMovementAdvanced1.MovementState.sprinting;
+        bool isPlayerRunning = playerMovement.state == PlayerMovementAdvanced.MovementState.sprinting;
         bool isPlayerShooting = playerMovement.IsShooting;
 
         if ((isPlayerRunning || isPlayerShooting) && Vector3.Distance(transform.position, player.transform.position) <= sightDistance)

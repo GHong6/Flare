@@ -65,6 +65,12 @@ public class PlayerMovementAdvanced : MonoBehaviour
 
     public bool isAiming1;
 
+    private bool isShooting = false;
+    public bool IsShooting
+    {
+        get { return isShooting; }
+        private set { isShooting = value; }
+    }
 
     Vector3 moveDirection;
 
@@ -84,6 +90,7 @@ public class PlayerMovementAdvanced : MonoBehaviour
 
     public bool sliding;
     private PlayerHealth playerHealth;
+
 
 
     private bool canSprint = true;
@@ -133,7 +140,7 @@ public class PlayerMovementAdvanced : MonoBehaviour
         // ground check
         grounded = Physics.Raycast(transform.position, Vector3.down, playerHeight * 0.5f + 0.2f, whatIsGround);
 
-        Debug.Log($"State: {state}, moveSpeed: {moveSpeed}, stamina: {playerHealth.GetStamina()}");
+        //Debug.Log($"State: {state}, moveSpeed: {moveSpeed}, stamina: {playerHealth.GetStamina()}");
 
         MyInput();
         SpeedControl();
@@ -424,6 +431,12 @@ public class PlayerMovementAdvanced : MonoBehaviour
     }
 
 
+    private IEnumerator Shoot()
+    {
+        IsShooting = true;
+        yield return new WaitForSeconds(1f); // Shooting lasts 1 second
+        IsShooting = false;
+    }
 
 
 }

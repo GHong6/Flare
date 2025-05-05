@@ -7,7 +7,6 @@ public class PlayerLocomotion : MonoBehaviour
     public float runSpeed = 6f;
     public float turnSmoothTime = 0.1f;
     public float movementSmoothing = 0.1f;
-
     public float speedSmoothness = 10f;
 
     [Header("References")]
@@ -16,13 +15,13 @@ public class PlayerLocomotion : MonoBehaviour
     private Rigidbody rb;
     private Animator animator;
     private Transform cameraTransform;
+    private PlayerHealth playerHealth; // Reference to stamina script
 
     private float turnSmoothVelocity;
     private Vector3 inputDirection;
     private Vector3 moveDirection;
     private Vector3 currentVelocity;
     private bool isRunning;
-
     private bool isAiming = false;
     public bool IsAiming { get; private set; }
 
@@ -38,6 +37,9 @@ public class PlayerLocomotion : MonoBehaviour
         animator = GetComponent<Animator>();
         cameraTransform = Camera.main.transform;
 
+
+        playerHealth = Object.FindFirstObjectByType<PlayerHealth>();
+
         rb.interpolation = RigidbodyInterpolation.Interpolate;
         Cursor.visible = false;
 
@@ -51,21 +53,20 @@ public class PlayerLocomotion : MonoBehaviour
         float vertical = Input.GetAxisRaw("Vertical");
         inputDirection = new Vector3(horizontal, 0f, vertical).normalized;
 
-        isRunning = Input.GetKey(KeyCode.LeftShift);
+        // Only allow running if stamina > 0
+        isRunning = Input.GetKey(KeyCode.LeftShift) && playerHealth.GetStamina() > 0f;
         isAiming = Input.GetMouseButton(1);
         animator.SetBool("IsAiming", isAiming);
 
         float targetAnimSpeed = inputDirection.magnitude * (isRunning ? runSpeed : walkSpeed);
         speed = Mathf.Lerp(speed, targetAnimSpeed, Time.deltaTime * speedSmoothness);
         animator.SetFloat("Speed", speed);
-        //Debug.Log("Speed: " + speed);
     }
 
     void FixedUpdate()
     {
         if (isAiming)
         {
-            // Rotate toward camera
             Vector3 aimDirection = cameraTransform.forward;
             aimDirection.y = 0f;
             aimDirection.Normalize();
@@ -91,7 +92,6 @@ public class PlayerLocomotion : MonoBehaviour
             moveDirection = Vector3.Lerp(moveDirection, targetDirection, movementSmoothing);
             targetSpeed = isRunning ? runSpeed : walkSpeed;
 
-            // Use raw targetSpeed for actual movement
             Vector3 targetVelocity = new Vector3(moveDirection.x * targetSpeed, rb.velocity.y, moveDirection.z * targetSpeed);
             rb.velocity = Vector3.SmoothDamp(rb.velocity, targetVelocity, ref currentVelocity, movementSmoothing);
         }
@@ -101,7 +101,6 @@ public class PlayerLocomotion : MonoBehaviour
             targetSpeed = 0f;
         }
 
-        // Now blend animation speed smoothly (0 to 2 or 6)
         float animTargetSpeed = inputDirection.magnitude * (isRunning ? runSpeed : walkSpeed);
         speed = Mathf.Lerp(speed, animTargetSpeed, Time.deltaTime * speedSmoothness);
         animator.SetFloat("Speed", speed);
