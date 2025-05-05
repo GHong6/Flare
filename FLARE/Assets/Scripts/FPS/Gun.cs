@@ -118,13 +118,29 @@ public class Gun : MonoBehaviour
         {
             if (CanShoot())
             {
-                Ray ray = new Ray(cam.position, cam.forward);
+                //Ray ray = new Ray(cam.position, cam.forward);
+                Ray ray = Camera.main.ScreenPointToRay(new Vector3(Screen.width / 2, Screen.height / 2));
                 Debug.DrawRay(ray.origin, ray.direction * gunData.maxDistance, Color.green, 1f);
 
-                if (Physics.Raycast(cam.position, cam.forward, out RaycastHit hitInfo, gunData.maxDistance))
+                //if (Physics.Raycast(cam.position, cam.forward, out RaycastHit hitInfo, gunData.maxDistance))
+                //{
+                //    IDamageable damageable = hitInfo.transform.GetComponent<IDamageable>();
+                //    damageable?.TakeDamage(gunData.damage);
+                //}
+
+                if (Physics.Raycast(ray, out RaycastHit hitInfo, gunData.maxDistance))
                 {
+                    Debug.Log($"Hit: {hitInfo.transform.name} at {hitInfo.point}");
+
                     IDamageable damageable = hitInfo.transform.GetComponent<IDamageable>();
-                    damageable?.TakeDamage(gunData.damage);
+                    if (damageable == null)
+                    {
+                        Debug.LogWarning("Hit object does not implement IDamageable!");
+                    }
+                    else
+                    {
+                        damageable.TakeDamage(gunData.damage);
+                    }
                 }
 
                 TriggerShootAnimations();
