@@ -7,6 +7,8 @@ using UnityEngine.AI;
 public class ZombieController : MonoBehaviour
 {
     private NavMeshAgent agent;
+    private Animator anim = null;
+
     [SerializeField] private Transform target;
 
     void Start()
@@ -27,21 +29,30 @@ public class ZombieController : MonoBehaviour
 
     private void MoveToTarget()
     {
-        if (target != null && agent.isOnNavMesh)
+        agent.SetDestination(target.position);
+        anim.SetFloat("Speed", 1f, 0.3f, Time.deltaTime);
+        RotateToTarget();
+
+        float distanceToTarget = Vector3.Distance(target.position, transform.position);
+        if (distanceToTarget <= agent.stoppingDistance)
         {
-            agent.SetDestination(target.position);
-            RotateToTarget();
+
+            //anim.SetFloat("Speed", Of);
         }
     }
 
     private void RotateToTarget()
     {
-        //transform.LookAt(target);
-
         Vector3 direction = target.position - transform.position;
-        Quaternion rotation = Quaternion.LookRotation(direction, Vector3.up);
-        transform.rotation = rotation;
+        direction.y = 0f; // Ignore vertical difference
+
+        if (direction.sqrMagnitude > 0.001f) // Prevent errors from zero-length vectors
+        {
+            Quaternion rotation = Quaternion.LookRotation(direction);
+            transform.rotation = rotation;
+        }
     }
+
 
     private void GetReferance()
     {
