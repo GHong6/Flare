@@ -6,19 +6,23 @@ using UnityEngine.AI;
 
 public class ZombieController : MonoBehaviour
 {
-    private NavMeshAgent agent;
+    [SerializeField] private float stoppingDistance = 3;
+    private float timeOfLastAttack = 0;
+    private bool hasStopped = false;
+
+    private NavMeshAgent agent = null;
     private Animator anim = null;
+    private ZombieStats stats = null;
+    
 
     [SerializeField] private Transform target;
 
+
     void Start()
     {
-        agent = GetComponent<NavMeshAgent>();
+        //agent = GetComponent<NavMeshAgent>();
 
-        if (target == null)
-        {
-            Debug.LogWarning("Target not assigned to ZombieController!");
-        }
+        GetReferance();
     }
 
     void Update()
@@ -30,7 +34,7 @@ public class ZombieController : MonoBehaviour
     private void MoveToTarget()
     {
         agent.SetDestination(target.position);
-        anim.SetFloat("Speed", 1f, 0.3f, Time.deltaTime);
+        //anim.SetFloat("Speed", 1f, 0.3f, Time.deltaTime);
         RotateToTarget();
 
         float distanceToTarget = Vector3.Distance(target.position, transform.position);
@@ -38,8 +42,33 @@ public class ZombieController : MonoBehaviour
         {
 
             //anim.SetFloat("Speed", Of);
+            if (!hasStopped)
+            {
+                hasStopped = true;
+                timeOfLastAttack = Time.time;
+            }
+            //attack
+            //charaterstats 
+
+            if (Time.time >= timeOfLastAttack + stats.attackSpeed)
+            {
+                timeOfLastAttack = Time.time;
+                PlayerHealth targetStats = target.GetComponent<PlayerHealth>();
+                AttackTarget(targetStats);
+                Debug.Log("Zombie attacks!");
+
+            }
+        }
+        else
+        {
+            if (hasStopped)
+            {
+                hasStopped = false;
+            }
         }
     }
+
+
 
     private void RotateToTarget()
     {
@@ -53,9 +82,16 @@ public class ZombieController : MonoBehaviour
         }
     }
 
+    private void AttackTarget(PlayerHealth statsToDamage)
+    {
+        //anim.SetTrigger("attack");
+        statsToDamage.TakeDamage(stats.damage);
+    }
 
     private void GetReferance()
     {
-
+        agent = GetComponent<NavMeshAgent>();
+        //anim = GetComponentInChild<Animator>();
+        stats = GetComponent<ZombieStats>();
     }
 }

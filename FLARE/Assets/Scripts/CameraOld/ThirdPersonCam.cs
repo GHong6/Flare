@@ -6,6 +6,23 @@ using UnityEngine.InputSystem;
 
 public class ThirdPersonCam : MonoBehaviour
 {
+
+
+    public CinemachineInputProvider inputProvider; // <- assign this in the Inspector
+
+    public void DisableCameraInput()
+    {
+        if (inputProvider != null)
+            inputProvider.enabled = false;
+    }
+
+    public void EnableCameraInput()
+    {
+        if (inputProvider != null)
+            inputProvider.enabled = true;
+    }
+
+
     public Transform orientation;
     public Transform player;
     public Transform playerObj;
@@ -75,9 +92,11 @@ public class ThirdPersonCam : MonoBehaviour
     private float doubleClickThreshold = 0.3f;
     private void Update()
     {
+        if (inventoryOpen)
+            return;
 
-
-        if (!allowRotation || inventoryOpen) return;
+        if (!allowRotation)
+            return;
 
         if (Input.GetKeyDown(KeyCode.LeftAlt))
         {

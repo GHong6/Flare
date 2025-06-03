@@ -3,13 +3,14 @@ using UnityEngine;
 public class PlayerInventory : MonoBehaviour
 {
     [Header("Inventory Settings")]
-    public GameObject inventoryUI; // Assign the UI Image GameObject in the Inspector
-    public KeyCode toggleKey = KeyCode.E; // Key to toggle inventory
-    public MonoBehaviour cameraController; // Reference to the camera control script (e.g., FPS Controller)
-    public MonoBehaviour playerController; // Reference to the player movement script (if needed)
+    public GameObject inventoryUI;
+    public KeyCode toggleKey = KeyCode.Tab;
+
+    [Header("References")]
+    public ThirdPersonCam cameraController; // Drag your ThirdPersonCam script here
     public MonoBehaviour gunSway;
-    public MonoBehaviour shoot; // Reference to the Shoot script on the player
-    public Gun gunScript; // Reference to the Gun script to check reload state
+    public MonoBehaviour shoot;
+    public Gun gunScript;
 
     public bool allowMouseLook = true;
 
@@ -18,13 +19,9 @@ public class PlayerInventory : MonoBehaviour
 
     void Update()
     {
-
-        if (!allowMouseLook) return;
-
-        // Check if the toggle key is pressed
+        // Toggle inventory with key press
         if (Input.GetKeyDown(toggleKey))
         {
-            // Only toggle the inventory if the gun is not reloading
             if (gunScript == null || !gunScript.GunData.reloading)
             {
                 ToggleInventory();
@@ -34,51 +31,50 @@ public class PlayerInventory : MonoBehaviour
                 Debug.Log("Cannot open inventory while reloading!");
             }
         }
-    }   
+    }
 
     private void ToggleInventory()
     {
-        // Toggle the inventory UI's active state
         isInventoryOpen = !isInventoryOpen;
         inventoryUI.SetActive(isInventoryOpen);
 
-        // Manage cursor state and disable/enable controls
         if (isInventoryOpen)
         {
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
 
-            // Freeze player input
-            if (playerController != null)
-                playerController.enabled = false;
+            // Disable camera rotation
+            if (cameraController is ThirdPersonCam cam)
+            {
+                cam.allowRotation = false;
+                cam.inventoryOpen = true;
+                cam.DisableCameraInput(); // Optional if using CinemachineInputProvider
+            }
 
-            //Prevent mouse look
-            //if (cameraController is MonoBehaviour cameraInputScript)
-            //    cameraInputScript.enabled = false;
+            if (gunSway != null)
+                gunSway.enabled = false;
 
-            if (cameraController is ThirdPersonCam camScript)
-                camScript.allowRotation = false;
-
-
-            gunSway.enabled = false;
-            shoot.enabled = false;
+            if (shoot != null)
+                shoot.enabled = false;
         }
         else
         {
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
 
-            if (playerController != null)
-                playerController.enabled = true;
+            // Enable camera rotation
+            if (cameraController is ThirdPersonCam cam)
+            {
+                cam.allowRotation = true;
+                cam.inventoryOpen = false;
+                cam.EnableCameraInput(); // Optional if using CinemachineInputProvider
+            }
 
-            //if (cameraController is MonoBehaviour cameraInputScript)
-            //    cameraInputScript.enabled = true;
+            if (gunSway != null)
+                gunSway.enabled = true;
 
-            if (cameraController is ThirdPersonCam camScript)
-                camScript.inventoryOpen = true;
-
-            gunSway.enabled = true;
-            shoot.enabled = true;
+            if (shoot != null)
+                shoot.enabled = true;
         }
     }
 }

@@ -5,8 +5,8 @@ using UnityEngine;
 public class ZombieStats : CharacterStats
 {
 
-    [SerializeField] private float damage;
-    [SerializeField] private float attackSpeed;
+    [SerializeField] public int damage;
+    [SerializeField] public float attackSpeed;
 
     [SerializeField] private bool canAttack;
 
@@ -15,10 +15,10 @@ public class ZombieStats : CharacterStats
     {
         InitVariables();
     }
-    public void DealDamage()
+    public void DealDamage(CharacterStats statsToDamage)
     {
         //damage func
-
+        statsToDamage.TakeDamage(damage);
     }
 
     public override void Die()
@@ -26,6 +26,11 @@ public class ZombieStats : CharacterStats
         base.Die();
         Destroy(gameObject);
     }
+
+
+
+
+
 
     public override void InitVariables()
     {
